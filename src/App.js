@@ -1,57 +1,90 @@
-import React from 'react';
-import logo from './logo.svg';
-import { Counter } from './features/counter/Counter';
-import './App.css';
+import { createTheme } from "@mui/material";
+import { ThemeProvider } from "@mui/styles";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import "./App.css";
+import Header from "./components/Header";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import Users from "./pages/Users";
+import Clients from "./pages/Clients";
+import Unauthorized from "./pages/Unauthorized";
+import RequireAuth from "./components/RequireAuth";
+import NotFound from "./pages/NotFound";
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#2FA561",
+      light: "#fcd1b6",
+    },
+    secondary: {
+      main: "#4682B4",
+      light: "#f8324526",
+    },
+    background: {
+      default: "#fff",
+    },
+  },
+  overrides: {
+    MuiAppBar: {
+      root: {
+        transform: "translateZ(0)",
+      },
+    },
+  },
+  props: {
+    MuiIconButton: {
+      disableRipple: true,
+    },
+  },
+});
+
+const ROLES = {
+  ROLE_USER: "ROLE_USER",
+  ROLE_ADMIN: "ROLE_ADMIN",
+};
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <Counter />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <span>
-          <span>Learn </span>
-          <a
-            className="App-link"
-            href="https://reactjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
+    <Router>
+      <ThemeProvider theme={theme}>
+        <Header />
+        <Routes>
+          {/* authenticated */}
+          {/* Role Users */}
+          <Route
+            element={
+              <RequireAuth allowedRoles={[ROLES.ROLE_USER, ROLES.ROLE_ADMIN]} />
+            }
           >
-            React
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux-toolkit.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux Toolkit
-          </a>
-          ,<span> and </span>
-          <a
-            className="App-link"
-            href="https://react-redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React Redux
-          </a>
-        </span>
-      </header>
-    </div>
+            <Route exact path="/" element={<Home />} />
+            <Route exact path="/profile" element={<Profile />} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={[ROLES.ROLE_USER]} />}>
+            <Route exact path="/clients" element={<Clients />} />
+          </Route>
+
+          {/* Role Admin */}
+          <Route element={<RequireAuth allowedRoles={[ROLES.ROLE_ADMIN]} />}>
+            <Route exact path="/users" element={<Users />} />
+          </Route>
+
+          {/* Not authenticated */}
+          <Route exact path="/login" element={<Login />} />
+          <Route
+            path="/logout"
+            exact
+            element={<Login message="User Logged Out Successfully." />}
+          />
+          <Route exact path="/unauthorized" element={<Unauthorized />} />
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </ThemeProvider>
+    </Router>
   );
 }
 
