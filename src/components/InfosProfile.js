@@ -1,8 +1,14 @@
 import { Send } from "@mui/icons-material";
-import { Grid, TextField } from "@mui/material";
-import { Form, Formik } from "formik";
+import {
+	Grid,
+	TextField as OTextField,
+	CircularProgress,
+	Button,
+} from "@mui/material";
+import { TextField } from "formik-mui";
+
+import { Form, Formik, Field } from "formik";
 import React, { useState } from "react";
-import moment from "moment";
 import { useDispatch } from "react-redux";
 import { isoFormatDMY, MyButton, parseISOString } from "../Utils";
 import AdapterDateFns from "@mui/lab/AdapterDateFns";
@@ -10,125 +16,134 @@ import LocalizationProvider from "@mui/lab/LocalizationProvider";
 import { DatePicker } from "@mui/lab";
 import { updateUser } from "../features/auth/AuthSlice";
 import { useStylesInfosProfile } from "../styles/ComponentStyles";
-
+import { Controls } from "./controls/controls";
+import { useSnackbar } from "notistack";
 function InfosProfile({ user }) {
-  const classes = useStylesInfosProfile();
-  const dispatch = useDispatch();
-  const { nom, prenom, email, dateBirth, authorities } = user;
-  const [dteBirth, setDteBirth] = useState(dateBirth);
-  const initialValuesInfosProfile = {
-    nom: nom || "",
-    prenom: prenom || "",
-    email: email || "",
-  };
-  return (
-    <div className={classes.infoProfileContainer}>
-      <h3 className={classes.infoProfilecTitle}>
-        Modifier les informations Personnelles
-      </h3>
-      <Formik
-        initialValues={initialValuesInfosProfile}
-        enableReinitialize={true}
-        onSubmit={(values) => {
-          dispatch(
-            updateUser({
-              oldUser: { ...values, dateBirth: dteBirth },
-              id: user.id,
-            })
-          );
-          console.log(
-            JSON.stringify({ ...values, dateBirth: dteBirth }, null, 2)
-          );
-        }}
-      >
-        {({ values, isSubmitting, handleChange, errors, touched }) => (
-          <Form autoComplete="off">
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <TextField
-                  id="nom"
-                  name={"nom"}
-                  label="Nom"
-                  value={values.nom}
-                  onChange={handleChange}
-                  error={touched.nom && Boolean(errors.nom)}
-                  helperText={touched.nom && errors.nom}
-                  variant="standard"
-                  className="input-field"
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  id="prenom"
-                  name={"prenom"}
-                  label="Prenom"
-                  value={values.prenom}
-                  onChange={handleChange}
-                  error={touched.prenom && Boolean(errors.prenom)}
-                  helperText={touched.prenom && errors.prenom}
-                  variant="standard"
-                  className="input-field"
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  id="email"
-                  name={"email"}
-                  label="Email"
-                  value={values.email}
-                  onChange={handleChange}
-                  error={touched.email && Boolean(errors.email)}
-                  helperText={touched.email && errors.email}
-                  variant="standard"
-                  className="input-field"
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    label="Année de naissance"
-                    value={dteBirth}
-                    onChange={(newValue) => {
-                      setDteBirth(newValue);
-                    }}
-                    inputFormat="dd/MM/yyyy"
-                    toolbarFormat="dd/MM/yyyy"
-                    renderInput={(params) => (
-                      <TextField
-                        variant="standard"
-                        className="input-field"
-                        margin="normal"
-                        {...params}
-                      />
-                    )}
-                  />
-                </LocalizationProvider>
-              </Grid>
-              <Grid item xs={12} mt={5}>
-                <MyButton
-                  color1="#2FA561"
-                  color2="#0faf52"
-                  width="70%"
-                  endIcon={<Send />}
-                  type="submit"
-                  disabled={
-                    values.nom === 0 ||
-                    values.prenom === 0 ||
-                    values.email === 0
-                  }
-                >
-                  Modifier
-                </MyButton>
-              </Grid>
-            </Grid>
-          </Form>
-        )}
-      </Formik>
-    </div>
-  );
+	const classes = useStylesInfosProfile();
+	const dispatch = useDispatch();
+	const [notify, setNotify] = useState({
+		isOpen: false,
+		message: "",
+		type: "",
+	});
+	const { enqueueSnackbar } = useSnackbar();
+	const { nom, prenom, email, dateBirth, authorities } = user;
+	const [dteBirth, setDteBirth] = useState(dateBirth);
+	const initialValuesInfosProfile = {
+		nom: nom || "",
+		prenom: prenom || "",
+		email: email || "",
+		dateBirth: dateBirth || "",
+	};
+	return (
+		<div className={classes.infoProfileContainer}>
+			<h3 className={classes.infoProfilecTitle}>
+				Modifier les informations Personnelles
+			</h3>
+			<Formik
+				initialValues={initialValuesInfosProfile}
+				enableReinitialize={true}
+				onSubmit={(values, { setSubmitting }) => {
+					setSubmitting(true);
+					dispatch(
+						updateUser({
+							oldUser: values,
+							id: user.id,
+						})
+					)
+						.then((response) => {
+							setSubmitting(false);
+							enqueueSnackbar("Utilisateur modifié avec succés!", {
+								variant: "success",
+							});
+						})
+						.catch((error) => {
+							setSubmitting(false);
+							enqueueSnackbar(error, { variant: "error" });
+						});
+					console.log(JSON.stringify(values, null, 2));
+				}}
+			>
+				{({ values, isSubmitting, setFieldValue, dirty, isValid }) => (
+					<Form autoComplete="off">
+						<Grid container spacing={2}>
+							<Grid item xs={6}>
+								<Field
+									name="nom"
+									type="input"
+									component={TextField}
+									variant="standard"
+									label="Nom"
+									className="input-field"
+									margin="normal"
+								/>
+							</Grid>
+							<Grid item xs={6}>
+								<Field
+									name="prenom"
+									type="input"
+									component={TextField}
+									variant="standard"
+									label="Prenom"
+									className="input-field"
+									margin="normal"
+								/>
+							</Grid>
+							<Grid item xs={6}>
+								<Field
+									name="email"
+									type="input"
+									component={TextField}
+									variant="standard"
+									label="Email"
+									className="input-field"
+									margin="normal"
+								/>
+							</Grid>
+							<Grid item xs={6}>
+								<LocalizationProvider dateAdapter={AdapterDateFns}>
+									<DatePicker
+										label="Année de naissance"
+										value={values.dateBirth}
+										onChange={(newValue) => {
+											setFieldValue("dateBirth", newValue);
+										}}
+										inputFormat="dd/MM/yyyy"
+										toolbarFormat="dd/MM/yyyy"
+										renderInput={(params) => (
+											<OTextField
+												variant="standard"
+												className="input-field"
+												margin="normal"
+												{...params}
+											/>
+										)}
+									/>
+								</LocalizationProvider>
+							</Grid>
+							<Grid item xs={12} mt={5}>
+								<Button
+									type="submit"
+									variant="contained"
+									disabled={isSubmitting || !dirty || !isValid}
+									style={{ color: "#FFF", width: 150 }}
+								>
+									{isSubmitting ? (
+										<div style={{ display: "flex" }}>
+											<CircularProgress size={25} sx={{ color: "#FFF" }} />
+										</div>
+									) : (
+										"Créer"
+									)}
+								</Button>
+							</Grid>
+						</Grid>
+					</Form>
+				)}
+			</Formik>
+			<Controls.Notification notify={notify} setNotify={setNotify} />
+		</div>
+	);
 }
 
 export default InfosProfile;

@@ -1,175 +1,269 @@
 import React, { useState } from "react";
-import PropTypes from "prop-types";
-import Box from "@mui/material/Box";
-import Collapse from "@mui/material/Collapse";
+
 import IconButton from "@mui/material/IconButton";
-import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import useTable from "./controls/useTable";
 import { makeStyles } from "@mui/styles";
 import { useDispatch } from "react-redux";
-import { InputAdornment, Toolbar } from "@mui/material";
-import { Add, Search } from "@mui/icons-material";
+import { Button, InputAdornment, Toolbar, Tooltip } from "@mui/material";
+import {
+	Add,
+	AttachMoney,
+	ClearOutlined,
+	Face,
+	Female,
+	ModeEditOutlineOutlined,
+	Search,
+	Visibility,
+	Home,
+} from "@mui/icons-material";
 import { Controls } from "./controls/controls";
 import { MyButton } from "../Utils";
-import moment from "moment";
+import { getFullName } from "../helpers/ClientHelper";
+import {
+	deleteClient,
+	sAdressToEdit,
+	sClientToEdit,
+	sConjointToEdit,
+	tarifierClient,
+} from "../features/clients/ClientsSlice";
+import { useSnackbar } from "notistack";
 
-function createData(name, calories, fat, carbs, protein, price) {
-  return {
-    name,
-    calories,
-    fat,
-    carbs,
-    protein,
-    price,
-    history: [
-      {
-        date: "2020-01-05",
-        customerId: "11091700",
-        amount: 3,
-      },
-      {
-        date: "2020-01-02",
-        customerId: "Anonymous",
-        amount: 1,
-      },
-    ],
-  };
+function Row({
+	client,
+	setConfirmDialog,
+	confirmDialog,
+	setopenDialogUpdateClient,
+	setopenDialogViewClient,
+	setopenDialogAdress,
+	setopenDialogConjoint,
+	setopenDialogEnfants,
+}) {
+	const dispatch = useDispatch();
+	const { enqueueSnackbar } = useSnackbar();
+	const onDelete = (id) => {
+		setConfirmDialog({
+			...confirmDialog,
+			isOpen: false,
+		});
+		console.log(id);
+		dispatch(deleteClient(id))
+			.then((response) => {
+				enqueueSnackbar("Client supprimé avec succés!", {
+					variant: "success",
+				});
+			})
+			.catch((error) => {
+				enqueueSnackbar(error, { variant: "error" });
+			});
+	};
+	return (
+		<TableRow>
+			<TableCell>{getFullName(client.nom, client.prenom)}</TableCell>
+			{/* <TableCell>{client.prenom}</TableCell> */}
+			<TableCell>{client.email}</TableCell>
+			{/* <TableCell>
+				{client?.dateNaissanceSouscripteur &&
+					moment(client.dateNaissanceSouscripteur).format("DD/MM/yyyy")}
+			</TableCell> */}
+			<TableCell>
+				<center>
+					<Tooltip title="Tarification" arrow>
+						<IconButton
+							aria-label="Tarification"
+							onClick={() => {
+								dispatch(tarifierClient(client.id));
+							}}
+						>
+							<AttachMoney />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title="Enfants" arrow>
+						<IconButton
+							aria-label="Enfants"
+							onClick={() => {
+								setopenDialogEnfants(true);
+								dispatch(sClientToEdit(client));
+							}}
+						>
+							<Face />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title="Conjoint" arrow>
+						<IconButton
+							aria-label="Conjoint"
+							onClick={() => {
+								dispatch(sClientToEdit(client));
+								dispatch(sConjointToEdit(client.conjoint));
+								setopenDialogConjoint(true);
+							}}
+						>
+							<Female />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title="Adresse" arrow>
+						<IconButton
+							aria-label="Adresse"
+							onClick={() => {
+								dispatch(sClientToEdit(client));
+								dispatch(sAdressToEdit(client.adress));
+								setopenDialogAdress(true);
+							}}
+						>
+							<Home />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title="Visualiser" arrow>
+						<IconButton
+							aria-label="Visualiser"
+							onClick={() => {
+								setopenDialogViewClient(true);
+								dispatch(sClientToEdit(client));
+							}}
+						>
+							<Visibility />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title="Modifier" arrow>
+						<IconButton
+							aria-label="Modifier"
+							onClick={() => {
+								setopenDialogUpdateClient(true);
+								dispatch(sClientToEdit(client));
+							}}
+						>
+							<ModeEditOutlineOutlined />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title="Supprimer" arrow>
+						<IconButton
+							aria-label="Supprimer"
+							onClick={() => {
+								setConfirmDialog({
+									isOpen: true,
+									title: "Are you sure to delete this record?",
+									subTitle: "You can't undo this operation",
+									onConfirm: () => {
+										onDelete(client.id);
+									},
+								});
+							}}
+						>
+							<ClearOutlined />
+						</IconButton>
+					</Tooltip>
+				</center>
+			</TableCell>
+		</TableRow>
+	);
 }
-
-function Row({ user }) {
-  const [open, setOpen] = React.useState(false);
-
-  return (
-    <React.Fragment>
-      <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
-        <TableCell>
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => setOpen(!open)}
-          >
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
-        </TableCell>
-
-        <TableCell>{user.nom}</TableCell>
-        <TableCell>{user.prenom}</TableCell>
-        <TableCell>{user.email}</TableCell>
-        <TableCell>
-          {user?.dateBirth && moment(user.dateBirth).format("DD/MM/yyyy")}
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-          <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 1 }}>
-              <Typography variant="h6" gutterBottom component="div">
-                History
-              </Typography>
-            </Box>
-          </Collapse>
-        </TableCell>
-      </TableRow>
-    </React.Fragment>
-  );
-}
-
-const rows = [
-  createData("Frozen yoghurt", 159, 6.0, 24, 4.0, 3.99),
-  createData("Ice cream sandwich", 237, 9.0, 37, 4.3, 4.99),
-  createData("Eclair", 262, 16.0, 24, 6.0, 3.79),
-  createData("Cupcake", 305, 3.7, 67, 4.3, 2.5),
-  createData("Gingerbread", 356, 16.0, 49, 3.9, 1.5),
-];
 
 const useStyles = makeStyles((theme) => ({
-  toolbar: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  pageContent: {
-    marginTop: 20,
-    padding: 15,
-  },
-  searchInput: {
-    width: "50%",
-  },
-  newButton: {
-    position: "absolute",
-    right: "10px",
-  },
+	toolbar: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+	},
+	pageContent: {
+		marginTop: 5,
+		padding: 15,
+	},
+	searchInput: {
+		width: "50%",
+	},
+	newButton: {
+		position: "absolute",
+		right: "10px",
+	},
 }));
 
-function ClientsTable({ list, headCells }) {
-  const classes = useStyles();
-  const dispatch = useDispatch();
-  const [filterFn, setFilterFn] = useState({
-    fn: (list) => {
-      return list;
-    },
-  });
-  const { TblContainer, TblHead, TblPagination, recordsAfterPadingAndSorting } =
-    useTable(list, headCells, filterFn);
-  const handleSearch = (e) => {
-    let target = e.target;
-    setFilterFn({
-      fn: (list) => {
-        if (target.value == "") return list;
-        else
-          return list.filter((x) => x.nom.toLowerCase().includes(target.value));
-      },
-    });
-  };
-  return (
-    <div>
-      <Paper className={classes.pageContent}>
-        <Toolbar className={classes.toolbar}>
-          <Controls.Input
-            label="Search Employees"
-            className={classes.searchInput}
-            id="search"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
-            onChange={handleSearch}
-          />
-          <MyButton
-            // onClick={handleOpenDialogCreationUser}
-            color1="#2FA561"
-            color2="#0faf52"
-            startIcon={<Add />}
-          >
-            Ajouter utilisateur
-          </MyButton>
-        </Toolbar>
-        <TblContainer>
-          <Table aria-label="collapsible table">
-            <TblHead />
-            <TableBody>
-              {recordsAfterPadingAndSorting().map((user, index) => (
-                <Row key={index} user={user} />
-              ))}
-            </TableBody>
-          </Table>
-        </TblContainer>
-        <TblPagination />
-      </Paper>
-    </div>
-  );
+function ClientsTable({
+	list,
+	headCells,
+	setopenDialogCreateUser,
+	setopenDialogUpdateClient,
+	setopenDialogConjoint,
+	setopenDialogAdress,
+	setopenDialogViewClient,
+	setopenDialogEnfants,
+	setConfirmDialog,
+	confirmDialog,
+}) {
+	const classes = useStyles();
+	const dispatch = useDispatch();
+	const [filterFn, setFilterFn] = useState({
+		fn: (list) => {
+			return list;
+		},
+	});
+	const { TblContainer, TblHead, TblPagination, recordsAfterPadingAndSorting } =
+		useTable(list, headCells, filterFn);
+	const handleSearch = (e) => {
+		let target = e.target;
+		setFilterFn({
+			fn: (list) => {
+				if (target.value == "") return list;
+				else
+					return list.filter((x) => {
+						let fullname = getFullName(x.nom, x.prenom);
+						return fullname.toLowerCase().includes(target.value);
+					});
+			},
+		});
+	};
+	return (
+		<div>
+			<Paper className={classes.pageContent}>
+				<Toolbar className={classes.toolbar}>
+					<Controls.Input
+						label="Cherchez par nom"
+						className={classes.searchInput}
+						id="search"
+						InputProps={{
+							startAdornment: (
+								<InputAdornment position="start">
+									<Search />
+								</InputAdornment>
+							),
+						}}
+						onChange={handleSearch}
+					/>
+					{/* <Link to="/create-client" className="no-Link-style"> */}
+					<Button
+						onClick={() => setopenDialogCreateUser(true)}
+						startIcon={<Add />}
+						variant="contained"
+					>
+						Ajouter utilisateur
+					</Button>
+
+					{/* </Link> */}
+				</Toolbar>
+				<TblContainer>
+					<TblHead />
+					<TableBody>
+						{recordsAfterPadingAndSorting().map((client, index) => (
+							<Row
+								key={index}
+								client={client}
+								setConfirmDialog={setConfirmDialog}
+								setopenDialogUpdateClient={setopenDialogUpdateClient}
+								setopenDialogViewClient={setopenDialogViewClient}
+								setopenDialogConjoint={setopenDialogConjoint}
+								setopenDialogAdress={setopenDialogAdress}
+								setopenDialogEnfants={setopenDialogEnfants}
+								confirmDialog={confirmDialog}
+							/>
+						))}
+					</TableBody>
+				</TblContainer>
+				<TblPagination />
+			</Paper>
+		</div>
+	);
 }
 
 export default ClientsTable;

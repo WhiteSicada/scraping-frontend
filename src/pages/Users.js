@@ -7,10 +7,11 @@ import MyModal from "../components/MyModal";
 import { useDispatch } from "react-redux";
 import { getUsers } from "../features/users/UserSlice";
 import UsersTable from "../components/UsersTable";
+import { getProfile } from "../features/auth/AuthSlice";
 
 const useStyles = makeStyles((theme) => ({
   usersHeaders: {
-    marginTop: 50,
+    marginTop: 10,
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
@@ -25,11 +26,12 @@ function Users() {
 
   useEffect(() => {
     dispatch(getUsers());
+    dispatch(getProfile());
   }, [dispatch]);
 
   return (
     <div>
-      <Container fixed>
+      <Container fixed maxWidth="md">
         <div className={classes.usersHeaders}>
           <h3>Gestion des utilisateurs</h3>
         </div>

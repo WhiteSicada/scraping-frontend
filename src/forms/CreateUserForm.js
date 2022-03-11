@@ -1,203 +1,189 @@
 import { Lock, Send, Visibility, VisibilityOff } from "@mui/icons-material";
 import { DatePicker, LocalizationProvider } from "@mui/lab";
 import AdapterDateFns from "@mui/lab/AdapterDateFns";
-import { Grid, IconButton, InputAdornment, TextField } from "@mui/material";
+import {
+	Button,
+	CircularProgress,
+	Grid,
+	IconButton,
+	InputAdornment,
+	TextField as OTextField,
+} from "@mui/material";
 import { makeStyles } from "@mui/styles";
-import { Form, Formik } from "formik";
+import { Field, Form, Formik } from "formik";
 import React, { useState } from "react";
 import { MyButton } from "../Utils";
 import { useDispatch } from "react-redux";
 import { createUser } from "../features/users/UserSlice";
-import moment from "moment";
+import { TextField } from "formik-mui";
+import { initialValuesCreation, validationSchema } from "../helpers/UserHelper";
+import { useSnackbar } from "notistack";
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    textAlign: "center",
-    marginTop: 30,
-  },
+	root: {
+		textAlign: "center",
+		marginTop: 30,
+	},
 }));
 
 const initialValuesCreateUserForm = {
-  id: null,
-  nom: "test2",
-  username : "testuser",
-  prenom: "user2",
-  email: "test2@user2.com",
-  password: "test2user2",
+	id: null,
+	nom: "test2",
+	username: "test2",
+	prenom: "user2",
+	email: "test2@user2.com",
+	password: "kun123456789+",
 };
 
 function CreateUserForm({ handleCloseDialog, setNotify }) {
-  const classes = useStyles();
-  const dispatch = useDispatch();
-  const [dateBirth, setDteBirth] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
+	const classes = useStyles();
+	const dispatch = useDispatch();
+	const [dateBirth, setDteBirth] = useState(null);
+	const [showPassword, setShowPassword] = useState(false);
+	const handleClickShowPassword = () => {
+		setShowPassword(!showPassword);
+	};
 
-  const handleMouseDownPassword = (event) => {
-    event.preventDefault();
-  };
+	const handleMouseDownPassword = (event) => {
+		event.preventDefault();
+	};
+  const { enqueueSnackbar } = useSnackbar();
+	return (
+		<div className={classes.root}>
+			<h4>Ajouter un utilisateur</h4>
+			<Formik
+				enableReinitialize={true}
+				initialValues={initialValuesCreation}
+				validationSchema={validationSchema}
+				onSubmit={(values, { setSubmitting, resetForm }) => {
+					// console.log(JSON.stringify(values, null, 2));
+					dispatch(createUser(values))
+						.then((response) => {
+							resetForm();
+							handleCloseDialog();
+							enqueueSnackbar("Utilisateur crée avec succés!", {
+								variant: "success",
+							});
+						})
+						.catch((error) => {
+							enqueueSnackbar(error, { variant: "error" });
+						});
+				}}
+			>
+				{({ values, isSubmitting, setFieldValue, dirty, isValid }) => (
+					<Form>
+						<Grid container spacing={2}>
+							<Grid item xs={6}>
+								<Field
+									name="username"
+									type="input"
+									component={TextField}
+									variant="standard"
+									label="Username"
+									className="input-field"
+									margin="normal"
+								/>
+							</Grid>
+							<Grid item xs={6}>
+								<Field
+									name="nom"
+									type="input"
+									component={TextField}
+									variant="standard"
+									label="Nom"
+									className="input-field"
+									margin="normal"
+								/>
+							</Grid>
+							<Grid item xs={6}>
+								<Field
+									name="prenom"
+									type="input"
+									component={TextField}
+									variant="standard"
+									label="Prenom"
+									className="input-field"
+									margin="normal"
+								/>
+							</Grid>
+							<Grid item xs={6}>
+								<Field
+									name="email"
+									type="input"
+									component={TextField}
+									variant="standard"
+									label="Email"
+									className="input-field"
+									margin="normal"
+								/>
+							</Grid>
+							<Grid item xs={6}>
+								<LocalizationProvider dateAdapter={AdapterDateFns}>
+									<DatePicker
+										label="Année de naissance"
+										value={values.dateBirth}
+										onChange={(newValue) => {
+											setFieldValue("dateBirth", newValue);
+										}}
+										inputFormat="dd/MM/yyyy"
+										toolbarFormat="dd/MM/yyyy"
+										renderInput={(params) => (
+											<OTextField
+												variant="standard"
+												className="input-field"
+												margin="normal"
+												{...params}
+											/>
+										)}
+									/>
+								</LocalizationProvider>
+							</Grid>
+							<Grid item xs={6}>
+								<Field
+									name="password"
+									type={showPassword ? "text" : "password"}
+									component={TextField}
+									variant="standard"
+									label="Password 5 characters"
+									className="input-field"
+									margin="normal"
+									InputProps={{
+										endAdornment: (
+											<InputAdornment position="end">
+												<IconButton
+													aria-label="toggle password visibility"
+													onClick={() => setShowPassword(!showPassword)}
+												>
+													{showPassword ? <Visibility /> : <VisibilityOff />}
+												</IconButton>
+											</InputAdornment>
+										),
+									}}
+								/>
+							</Grid>
 
-  return (
-    <div className={classes.root}>
-      <h4>Ajouter un utilisateur</h4>
-      <Formik
-        enableReinitialize={true}
-        initialValues={initialValuesCreateUserForm}
-        onSubmit={(values, { setSubmitting, resetForm }) => {
-          dispatch(createUser({ ...values, dateBirth: dateBirth }))
-            .then((response) => {
-              resetForm();
-              handleCloseDialog();
-              setNotify({
-                isOpen: true,
-                message: "Utilisateur crée avec succés!",
-                type: "success",
-              });
-            })
-            .catch((error) => {
-              setNotify({
-                isOpen: true,
-                message: error,
-                type: "error",
-              });
-            });
-        }}
-      >
-        {({ values, isSubmitting, handleChange, errors, touched }) => (
-          <Form>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <TextField
-                  id="username"
-                  name={"username"}
-                  label="Username"
-                  value={values.username}
-                  onChange={handleChange}
-                  error={touched.username && Boolean(errors.username)}
-                  helperText={touched.username && errors.username}
-                  variant="standard"
-                  className="input-field"
-                  margin="normal"
-                  autoComplete="off"
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  id="nom"
-                  name={"nom"}
-                  label="Nom"
-                  value={values.nom}
-                  onChange={handleChange}
-                  error={touched.nom && Boolean(errors.nom)}
-                  helperText={touched.nom && errors.nom}
-                  variant="standard"
-                  className="input-field"
-                  margin="normal"
-                  autoComplete="off"
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  id="prenom"
-                  name={"prenom"}
-                  label="Prenom"
-                  value={values.prenom}
-                  onChange={handleChange}
-                  error={touched.prenom && Boolean(errors.prenom)}
-                  helperText={touched.prenom && errors.prenom}
-                  variant="standard"
-                  className="input-field"
-                  margin="normal"
-                  autoComplete="off"
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  id="email"
-                  name={"email"}
-                  label="Email"
-                  value={values.email}
-                  onChange={handleChange}
-                  error={touched.email && Boolean(errors.email)}
-                  helperText={touched.email && errors.email}
-                  variant="standard"
-                  className="input-field"
-                  margin="normal"
-                  autoComplete="off"
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    label="Année de naissance"
-                    value={dateBirth}
-                    onChange={(newValue) => {
-                      setDteBirth(newValue);
-                    }}
-                    inputFormat="dd/MM/yyyy"
-                    toolbarFormat="dd/MM/yyyy"
-                    renderInput={(params) => (
-                      <TextField
-                        variant="standard"
-                        className="input-field"
-                        margin="normal"
-                        {...params}
-                      />
-                    )}
-                  />
-                </LocalizationProvider>
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  id="password"
-                  name={"password"}
-                  label={"Password"}
-                  value={values.password}
-                  onChange={handleChange}
-                  error={touched.password && Boolean(errors.password)}
-                  helperText={touched.password && errors.password}
-                  variant="standard"
-                  type={showPassword ? "text" : "password"}
-                  margin="normal"
-                  className="input-field"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock sx={{ color: "#2FA561" }} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <IconButton
-                        onClick={handleClickShowPassword}
-                        onMouseDown={handleMouseDownPassword}
-                      >
-                        {!showPassword ? <Visibility /> : <VisibilityOff />}
-                      </IconButton>
-                    ),
-                  }}
-                  autoComplete="off"
-                />
-              </Grid>
-
-              <Grid item xs={12} mt={5}>
-                <MyButton
-                  color1="#2FA561"
-                  color2="#0faf52"
-                  width="70%"
-                  type="submit"
-                  endIcon={<Send />}
-                >
-                  Créer
-                </MyButton>
-              </Grid>
-            </Grid>
-          </Form>
-        )}
-      </Formik>
-    </div>
-  );
+							<Grid item xs={12} mt={5}>
+								<Button
+									type="submit"
+									variant="contained"
+									disabled={isSubmitting || !dirty || !isValid}
+									style={{ color: "#FFF", width: 150 }}
+								>
+									{isSubmitting ? (
+										<div style={{ display: "flex" }}>
+											<CircularProgress size={25} sx={{ color: "#FFF" }} />
+										</div>
+									) : (
+										"Créer"
+									)}
+								</Button>
+							</Grid>
+						</Grid>
+					</Form>
+				)}
+			</Formik>
+		</div>
+	);
 }
 
 export default CreateUserForm;

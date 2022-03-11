@@ -17,7 +17,7 @@ const useStyles = makeStyles((theme) => ({
   container: {
     display: "flex",
     alignItems: "center",
-    height: "91vh",
+    marginTop: 30
   },
   rightContainer: { textAlign: "center" },
   leftContainer: {
@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
 function NotFound() {
   const classes = useStyles();
   return (
-    <Container fixed>
+    <Container fixed maxWidth="md">
       <Grid container className={classes.container}>
         <Grid item md={6} sm={12} xs={12} className={classes.leftContainer}>
           <img src={ReactLogo} alt="React Logo" />
